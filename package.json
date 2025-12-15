@@ -1,10 +1,16 @@
 {
   "name": "SAHAL-dashboard",
   "version": "1.0.0",
+  "type": "module",
   "scripts": {
-    "start": "vercel dev"
+    "start": "vercel dev",
+    "dev": "vercel dev",
+    "deploy": "vercel --prod"
   },
   "dependencies": {
     "@vercel/kv": "^1.0.1"
+  },
+  "engines": {
+    "node": ">=18"
   }
 }
