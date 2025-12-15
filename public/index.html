@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SAHAL ARB</title> | Multi-Account Dashboard</title>
+    <style>
+        :root { --bg: #09090b; --card: #18181b; --accent: #3b82f6; --text: #e4e4e7; }
+        body { background: var(--bg); color: var(--text); font-family: sans-serif; margin: 0; padding: 20px; }
+        
+        .grid { display: grid; grid-template-columns: 1fr 350px; gap: 20px; max-width: 1400px; margin: 0 auto; }
+        @media(max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+
+        .card { background: var(--card); padding: 20px; border-radius: 12px; border: 1px solid #27272a; }
+        h2 { margin-top: 0; color: var(--accent); border-bottom: 1px solid #333; padding-bottom: 10px; }
+
+        /* Logs Styling */
+        .log-item { display: flex; gap: 15px; padding: 10px; border-bottom: 1px solid #27272a; align-items: center; }
+        .log-item img { width: 40px; height: 40px; background: #000; border-radius: 5px; }
+        .rarity-tag { padding: 2px 8px; border-radius: 4px; font-size: 0.8em; font-weight: bold; }
+        
+        .Secret { color: #ff0055; background: rgba(255,0,85,0.1); }
+        .Legendary { color: #eab308; background: rgba(234,179,8,0.1); }
+        .Mythic { color: #a855f7; background: rgba(168,85,247,0.1); }
+
+        /* Account Stats Styling */
+        .acc-item { display: flex; justify-content: space-between; padding: 12px; background: #27272a; margin-bottom: 8px; border-radius: 8px; }
+        .acc-name { font-weight: bold; color: #fff; }
+        .acc-val { color: #4ade80; font-family: monospace; }
+        .status-dot { height: 8px; width: 8px; background-color: #4ade80; border-radius: 50%; display: inline-block; margin-right: 5px; }
+    </style>
+</head>
+<body>
+    <div style="text-align:center; margin-bottom: 20px;">
+        <h1>SAHAL ARB <span style="color:var(--accent)">DASHBOARD</span></h1>
+    </div>
+
+    <div class="grid">
+        <div class="card">
+            <h2>🎣 Live Catch Feed</h2>
+            <div id="logs-container">Loading...</div>
+        </div>
+
+        <div class="card">
+            <h2>👥 Active Accounts</h2>
+            <div id="accounts-container">Loading...</div>
+        </div>
+    </div>
+
+    <script>
+        async function updateDashboard() {
+            try {
+                const res = await fetch('/api/logs');
+                const data = await res.json();
+
+                // Render Logs
+                const logsHtml = data.logs.map(item => {
+                    const log = (typeof item === 'string') ? JSON.parse(item) : item; // Handle redis parsing
+                    const price = new Intl.NumberFormat('en-US', {style:'currency', currency:'USD'}).format(log.fish.price);
+                    
+                    return `
+                    <div class="log-item">
+                        <img src="${log.fish.image}" onerror="this.src='https://via.placeholder.com/40'">
+                        <div style="flex:1">
+                            <div><span class="rarity-tag ${log.fish.rarity}">${log.fish.rarity}</span> <b>${log.fish.name}</b></div>
+                            <div style="font-size:0.85em; opacity:0.7">
+                                👤 ${log.account.username} | ${price} | ${log.fish.variant}
+                            </div>
+                        </div>
+                        <div style="font-size:0.8em; opacity:0.5">${new Date(log.timestamp * 1000).toLocaleTimeString()}</div>
+                    </div>`;
+                }).join('');
+                document.getElementById('logs-container').innerHTML = logsHtml || '<p>No data yet.</p>';
+
+                // Render Accounts
+                const accHtml = data.accounts.map(acc => {
+                    // Sorting logic can be added here
+                    const totalVal = new Intl.NumberFormat('en-US', {style:'currency', currency:'USD'}).format(acc.total_value);
+                    const lastActive = Math.floor((Date.now() - acc.last_active) / 60000);
+                    
+                    return `
+                    <div class="acc-item">
+                        <div>
+                            <div class="acc-name"><span class="status-dot"></span>${acc.username}</div>
+                            <div style="font-size:0.8em; opacity:0.7">${acc.total_fish} fish caught</div>
+                        </div>
+                        <div style="text-align:right">
+                            <div class="acc-val">${totalVal}</div>
+                            <div style="font-size:0.8em; opacity:0.5">${lastActive}m ago</div>
+                        </div>
+                    </div>`;
+                }).join('');
+                document.getElementById('accounts-container').innerHTML = accHtml || '<p>No accounts active.</p>';
+
+            } catch (e) { console.error(e); }
+        }
+
+        setInterval(updateDashboard, 3000); // Update every 3 seconds
+        updateDashboard();
+    </script>
+</body>
+</html>
