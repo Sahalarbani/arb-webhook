@@ -1,0 +1,10 @@
+{
+  "name": "SAHAL-dashboard",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "vercel dev"
+  },
+  "dependencies": {
+    "@vercel/kv": "^1.0.1"
+  }
+}
